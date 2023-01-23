@@ -1,0 +1,23 @@
+---
+title: "Github_Intro_23"
+author: "Meggi Varnai"
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
+output: html_document
+---
+
+```{r setup}
+#source- executes the file/script 
+source("setup.R")
+```
+
+# R fundamenals
+
+```{r}
+#reads the data we want, from one of the packages we installed in previous codechunk
+data("penguins")
+#by typing the dataframe (tidyverse= tibble) name, the data loads
+penguins
+
+```
+
+
