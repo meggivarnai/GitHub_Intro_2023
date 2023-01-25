@@ -12,12 +12,249 @@ source("setup.R")
 
 # R fundamenals
 
-```{r}
+```{r import}
 #reads the data we want, from one of the packages we installed in previous codechunk
 data("penguins")
 #by typing the dataframe (tidyverse= tibble) name, the data loads
 penguins
+```
+
+```{r explore}
+#format of the data, data type/structure
+class(penguins)
+# tells the structure, more detailed
+str(penguins)
+```
+
+## Indexing
+
+indexing is important for data exploration and manipulation. *Lists need double brackets* [[]] *Vectors need single brackets* []
+
+### dataframe[row(s), columns()]
+
+```{r indexing}
+#list
+myList <- list("apple", 1993, FALSE, penguins)
+str(myList)
+
+list(myList, list("more stuff here", list("and more")))
+#You can use the names() function to retrieve or assign names to list and vector elements
+names(myList) <- c("fruit", "year", "logic", "data")
+names(myList)
+
+#vector
+myvector <- c("this", "review", "is", "helpful")
+myvector[3]
+
+# exploring penguin dataset
+penguins[1:10, 2]
+
+penguins[1:5, "island"]
+
+penguins[1, 1:5]
+
+penguins[1:5, c("species","sex")]
+
+penguins[penguins$sex=='female',]
+
+# $ for a single column
+penguins$species
+```
+
+## Exercise 6.3.1
+
+### Q1 Why don’t the following lines of code work? Tweak each one so the code runs.
+
+```{r}
+#myList["Fruit"]
+#it is a list and therefore needs [[]]. we also know fruit should be lowercase when checking the structure of the dataset. 
+str(myList)
+myList[["fruit"]]
+
+#penguins$flipper_lenght_mm
+# I retyped pengiuns, and then the $ i let the drop down come out to select flipper_length_mm and discovered the only thing wrong was spelling. 
+penguins$flipper_length_mm
+
+#penguins[island=='Dream',]
+#for this type of coding, we need to specify which dataset to look in within the [], and then look within a column. 
+penguins[penguins$island=='Dream',]
+```
+
+### Q2 How many species are in the penguins dataset? What islands were the data collected for? (Note: the unique() function might help)
+```{r}
+unique(penguins[,"species"])
+# 3 species
+unique(penguins[,"island"])
+# Torgersen, Biscoe, and Dream Islands
+```
+
+### Q3 Use indexing to create a new data frame that has only 3 columns: species, island and flipper length columns, and subset all rows for just the ‘Dream’ island.
+```{r}
+#dataframe[row(s), columns()]
+penguins_q3<- penguins[penguins$island=='Dream',c("species","island","flipper_length_mm")]
+```
+
+### Q4 Use indexing and the mean() function to find the average flipper length for the Adelie species on Dream island. (Note: explore the mean() function and how to deal with NA values).
+```{r}
+penguins_q4<- penguins[penguins$island=="Dream" & penguins$species== "Adelie",]
+avg_flipper_length_mm<- mean(penguins_q4$flipper_length_mm)
+```
+
+# dplyr functions in tidyverse
+## filter()
+subsets *ROWS*! Filter data in many ways using logical operators (>, >=, <, <=, != (not equal), and == (equal)), AND (&), OR (|), and NOT (!) operators, and other operations such as %in%, which returns everything that matches at least one of the values in a given vector, and is.na() and !is.na() to return all missing or all non-missing data. 
+
+*Tidyverse package functions take in column names without quotations.*
+```{r}
+filter(penguins, species == "Adelie")
+
+filter(penguins, species != "Adelie")
+
+filter(penguins, island %in% c("Dream", "Torgersen") & !is.na(bill_length_mm))
+```
+
+
+## select()
+many helper functions you can use with it, such as starts_with(), ends_with(), contains() and many more that are very useful when dealing with large data sets. 
+
+```{r}
+# Select two specific variables
+select(penguins, species, sex)
+
+# Select a range of variables
+select(penguins, species:flipper_length_mm)
+
+# Rename columns within select
+select(penguins, genus = species, island)
+
+# Select column variables that are recorded in mm
+select(penguins, contains("mm"))
 
 ```
+
+## mutate()
+creates new variables
+```{r}
+# New variable that calculates bill length in cm
+mutate(penguins, bill_length_cm = bill_length_mm/10)
+
+# mutate based on conditional statements
+#paste0 means no spaces!
+mutate(penguins, species_sex = if_else(sex == 'male', paste0(species,"_m"), paste0(species, "_f")))
+```
+
+## group_by() and summarise()
+changes the scope of each function from operating on the entire dataset to operating on it group-by-group. becomes even more powerful when used along with summarise() to calculate some specified summary statistic for each group. However before we start using multiple operations in conjunction with one another, we need to talk about the pipe operator %>%.
+```{r}
+penguins %>% 
+  group_by(species, year) %>% 
+  summarise(n_observations = n())
+```
+
+## pipe %>%
+clearly expressing a sequence of multiple operations.
+```{r}
+penguins %>% 
+  filter(island == "Dream") %>% 
+  mutate(flipper_length_cm = flipper_length_mm/10) %>% 
+  select(species, year, flipper_length_cm)
+```
+
+## Exercise 6.3.2
+### Q1 Reorder the variables in penguins so that year is the first column followed by the rest (Hint: look into the use of everything()).
+```{r}
+penguins %>%
+  select(year,everything())
+#everything takes all of the remaining column names
+```
+
+### Q2 Create a new column called ‘size_group’ where individuals with body mass greater than the overall average are called ‘large’ and those smaller are called ‘small’.
+```{r}
+penguins %>%
+  na.omit()%>%
+  mutate(size_group= ifelse( body_mass_g < mean(body_mass_g), 'small','large'))
+  #dont want to use 'summarize', it created a single value that we cant compare to the full column **ASK WHY EXACTLY**
+```
+
+### Q3 Find out which year for each species were individuals on average the largest according to body mass.
+```{r}
+penguins %>%
+  na.omit()%>%
+  group_by(species,year) %>%
+  summarise( mass_avg_year= mean(body_mass_g)) %>%
+  mutate(rank= min_rank(desc(mass_avg_year))) %>%
+  filter(rank==1)
+```
+species    year mass_avg_year  rank
+  <fct>     <int>         <dbl> <int>
+1 Adelie     2008         3742      1
+2 Chinstrap  2008         3800      1
+3 Gentoo     2009         5157      1
+
+### Q4 You want to filter data for years that are not in a vector of given years, but this code doesn’t work. Tweak it so that it does. (Yes, you could just filter year to equal 2007 in this case but there is a trouble-shooting lessons here).
+```{r}
+penguins %>% 
+  filter(!(year %in% c(2008, 2009)))
+#need to put the ! outside of the function to give us the opposite of what the function shows us
+```
+
+# Visualization
+
+## ggplot
+does not use the pipe %>% operator, but threads together arguments with + signs.
+*ggplot(data = <DATA>) + 
+  <GEOM_FUNCTION>(mapping = aes(<MAPPINGS>))*
+
+### Histogram
+```{r}
+# Histogram example: flipper length by species
+ggplot(penguins) +
+  geom_histogram(aes(x = flipper_length_mm, fill = species), alpha = 0.5, position = "identity") +
+  scale_fill_manual(values = c("darkorange","darkorchid","cyan4"))
+```
+
+using facet_wrap(): create a separate plot for each group
+```{r}
+ggplot(penguins) +
+  geom_histogram(aes(x = flipper_length_mm, fill = species), alpha = 0.5, position = "identity") +
+  scale_fill_manual(values = c("darkorange","darkorchid","cyan4")) +
+  facet_wrap(~species)
+```
+example using more customizing features
+```{r}
+ggplot(penguins, aes(x = island, fill = species)) +
+  geom_bar(alpha = 0.8) +
+  scale_fill_manual(values = c("darkorange","purple","cyan4"), 
+                    guide = FALSE) +
+  theme_minimal() +
+  facet_wrap(~species, ncol = 1) +
+  coord_flip()
+```
+
+## 7.1 Exercises
+
+### Q1 Make a barplot showing the average flipper length for each species.
+```{r}
+q7<-penguins %>%
+  na.omit() %>%
+  group_by(species) %>%
+  summarise(avg_flipper= mean(flipper_length_mm)) 
+ggplot(q7) +
+  geom_bar(mapping = aes(x=species, fill=avg_flipper))
+##how to do this?? look into geom_bar if more time
+```
+
+### Q2 Make a scatter plot of bill length compared to bill depth but only for observations on the Dream island.
+
+```{r}
+penguins %>%
+  filter(island=="Dream") %>%
+  ggplot()+
+  geom_point(mapping= aes(x=bill_length_mm, y=bill_depth_mm, color= species))
+```
+
+
+
+
 
 
