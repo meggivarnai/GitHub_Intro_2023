@@ -239,9 +239,10 @@ q7<-penguins %>%
   na.omit() %>%
   group_by(species) %>%
   summarise(avg_flipper= mean(flipper_length_mm)) 
-ggplot(q7) +
-  geom_bar(mapping = aes(x=species, fill=avg_flipper))
-##how to do this?? look into geom_bar if more time
+
+ggplot(q7, mapping = aes(x=species, y=avg_flipper)) +
+  geom_bar( stat="identity")
+##when looking at geom_bar in help, using "If you want the heights of the bars to represent values in the data, use geom_col() instead. geom_bar() uses stat_count() by default: it counts the number of cases at each x position. geom_col() uses stat_identity(): it leaves the data as is."
 ```
 
 ### Q2 Make a scatter plot of bill length compared to bill depth but only for observations on the Dream island.

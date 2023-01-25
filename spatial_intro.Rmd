@@ -1,0 +1,39 @@
+---
+title: "Spatial_Intro"
+author: "Meggi Varnai"
+date: "2023-01-25"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+source("setup.R")
+```
+
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+
+
+
+
+
