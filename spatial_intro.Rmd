@@ -4,15 +4,122 @@ author: "Meggi Varnai"
 date: "2023-01-25"
 output: html_document
 ---
-
+#Spatial Intro
 ```{r setup, include=FALSE}
+#bringing our setup file to load packages
 source("setup.R")
 ```
 
+##Tigris vector data 
+The tigris package is one of many data retrieval R packages that uses API calls to pull in data from various online/open databases directly into your R session
+
+```{r import counties}
+#import using tigris package, returns a shapefile consisting of polygons for each county
+counties<- counties(state= "CO")
+```
 
 
 ```{r}
+# importing roads for Larimer county, which returns a polyline dataset for all roads in Larimer County
+roads <- roads(state = "CO", county = "Larimer")
+```
 
+
+## quick visualization with tmap
+```{r}
+#interactive(us view) or static (use plot)
+tmap_mode("view")
+#qtm = quick thematic map 
+qtm(counties)+
+  qtm(roads)
+#more detailed map, better for customization
+tm_shape(counties)+
+  tm_polygons() #telling it what kind of layer
+```
+
+looking at the structure/data types of our data
+```{r}
+class(counties)
+#sf, data.frame
+```
+sf - simple feature (also an r package) helps work with vector data lets you work on spatial data like a 'normal' dataframe
+
+
+##Point data
+```{r point data}
+#from lesson plan
+poudre_points <- data.frame(name = c("Mishawaka", "Rustic", "Blue Lake Trailhead"),
+                            long = c(-105.35634, -105.58159, -105.85563),
+                            lat = c(40.68752, 40.69687, 40.57960))
+```
+
+### making non-spatial data spatial with the sf package
+first, nonspatial object, telling the package our points using 'coords' and then the coordinate reference system (WGS-84 = 4326 (most of USA))
+```{r}
+poudre_points_sf <- st_as_sf(poudre_points, coords= c("long","lat"), crs=4326)
+```
+
+## raster data
+elevatr package, returns a DEM
+```{r}
+#if you give it spatial, z= zoom level, the raster resolution
+elevation <- get_elev_raster(counties, z= 7) #7= 1 km resoution
+#class is raster layer
+
+```
+###mapping example
+```{r}
+qtm(elevation)
+#since we downloaded the data this way, it is a 'temp' file, only exists in our current session
+#more detailed map 
+tm_shape(elevation)+
+  tm_raster(style="cont", title= "Elevation (m") 
+#want continuous color pallet and a title
+```
+
+##terra
+working with the raster data in this class
+terra quirk: only deals with SpatRaster, need to 
+```{r}
+#rast is from terra, makes RastLayer into SpatRaster
+elevation<- rast(elevation)
+#renames the str version where name was a long weird file and now it'll be "Elevation"
+names(elevation)<- "Elevation"
+```
+
+before cropping, check the projection of the data
+```{r}
+st_crs(counties)
+#NAD83 
+crs(counties)== crs(elevation)
+#FALSE
+#project elevation layer
+elevation_prj<- project(elevation, counties)
+#doesnt work, need to specify which package to use!
+elevation_prj<- terra::project(elevation, counties)
+
+```
+
+cropping to our AOI
+```{r}
+elevation_crop<- crop(elevation, ext(counties))
+
+qtm(elevation_crop)
+```
+
+##read/write spatial data
+saving sf or raster data
+```{r}
+write_sf(counties, "data/counties.shp")
+
+#for raster, geotiff, .tiff format, what we will be using
+writeRaster(elevation_crop,"data/elevation.itff")
+
+```
+
+save rdata file
+```{r}
+save(counties, roads, file= "data/spatial_objects.RData")
 ```
 
 
@@ -20,20 +127,25 @@ source("setup.R")
 
 ```
 
-
-
 ```{r}
 
 ```
 
+# Exercises
 
+Filter out the counties data set to only include Larimer, Denver, and Pueblo counties.
 ```{r}
 
 ```
 
+Make a map of the counties data colored by county area. Make a second map of counties colored by their total area of water.
+```{r}
 
+```
 
+Make a barplot comparing the elevation of your 3 points in the Poudre Canyon (note: explore the extract() function in the terra package).
+```{r}
 
+```
 
-
-
+Why are there 4 features in our Poudre Canyon Highway variable instead of 1?
